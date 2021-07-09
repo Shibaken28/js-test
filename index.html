@@ -11,7 +11,7 @@
         }
 
         canvas {
-            background: #eee;
+            background: rgb(0, 0, 0);
             display: block;
             margin: 0 auto;
         }
@@ -19,26 +19,28 @@
 </head>
 
 <body>
-
-    <canvas id="myCanvas" width="480" height="320"></canvas>
+    <canvas id="myCanvas" width="480" height="480"></canvas>
 
     <script>
+
+        let time = 0;
         var canvas = document.getElementById("myCanvas");
         var ctx = canvas.getContext("2d");
-        var ballRadius = 10;
-        var x = canvas.width / 2;
-        var y = canvas.height - 30;
-        var dx = 2;
-        var dy = -2;
-        var paddleHeight = 10;
-        var paddleWidth = 75;
-        var paddleX = (canvas.width - paddleWidth) / 2;
-        var rightPressed = false;
-        var leftPressed = false;
+        let myX = canvas.width / 2;
+        let myY = canvas.height - 50;
+        let myR = 20;
+        let boxSize = 60;
+        let speed = 1;
+        let rightPressed = false;
+        let leftPressed = false;
+        let boxesX = [0];
+        let boxesY = [0];
+        let boxesC = [0];
+        let boxesV = [0];
 
-        document.addEventListener("keydown", keyDownHandler, false);
-        document.addEventListener("keyup", keyUpHandler, false);
-
+        function getRandomInt(max) {
+            return Math.floor(Math.random() * max);
+        }
         function keyDownHandler(e) {
             if (e.key == "Right" || e.key == "ArrowRight") {
                 rightPressed = true;
@@ -51,61 +53,97 @@
         function keyUpHandler(e) {
             if (e.key == "Right" || e.key == "ArrowRight") {
                 rightPressed = false;
+
+
             }
             else if (e.key == "Left" || e.key == "ArrowLeft") {
                 leftPressed = false;
             }
         }
 
+        function moveBoxes() {
+            if (rightPressed) {
+                myX += speed;
+                if (myX > canvas.width - myR) myX = canvas.width - myR;
+            }
+            if (leftPressed) {
+                myX -= speed;
+                if (myX < myR) myX = myR;
+            }
+            for (let i = 0; i < boxesX.length; i++) {
+                boxesY[i] += 1;
+                if(boxesC[i]==1){
+                    boxesX[i]+=boxesV[i];
+                    if(boxesX[i]>canvas.width-boxSize*2)boxesV[i]*=-1;
+                    if(boxesX[i]<boxSize)boxesV[i]*=-1;
+                }
+            }
+        }
+        function drawBoxes() {
+            ctx.beginPath();
+            ctx.lineWidth = 5;
+            for (let i = 0; i < boxesX.length; i++) {
+                ctx.rect(boxesX[i], boxesY[i], boxSize, boxSize);
+            }
+            ctx.fillStyle = "#00FFFF";
+            ctx.fill();
+            ctx.strokeStyle = "rgba(0, 0, 0)";
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function createBox(x,y,c){
+            boxesX.push(x);
+            boxesY.push(y);
+            boxesC.push(c);
+            let v=0;
+            if(c==1)v=0.5;
+            boxesV.push(v);
+        }
+
+        function initBox() {
+            createBox(getRandomInt(canvas.width/boxSize-2)*boxSize+boxSize,-boxSize,getRandomInt(2));
+            createBox(canvas.width-boxSize,-boxSize,0);
+            createBox(0,-boxSize,0);
+        }
+
         function drawBall() {
             ctx.beginPath();
-            ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-            ctx.fillStyle = "#0095DD";
+            ctx.arc(myX, myY, myR, 0, Math.PI * 2, false);
+            ctx.fillStyle = "#00FF00";
             ctx.fill();
             ctx.closePath();
         }
-        function drawPaddle() {
+
+        function drawBackGround() {
             ctx.beginPath();
-            ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
-            ctx.fillStyle = "#0095DD";
-            ctx.fill();
+            ctx.lineWidth = 10;
+            for (let x = -boxSize + time / 5 % boxSize; x < canvas.width + boxSize; x += boxSize) {
+                for (let y = -boxSize + time / 3 % boxSize; y < canvas.height + boxSize; y += boxSize) {
+
+                    ctx.rect(x, y, boxSize, boxSize);
+
+                }
+            }
+            ctx.strokeStyle = "rgba(0, 0, 255, 0.5)";
+            ctx.stroke();
             ctx.closePath();
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (time % boxSize == 0) initBox();
+            moveBoxes();
+            drawBackGround();
             drawBall();
-            drawPaddle();
+            drawBoxes();
 
-            if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
-                dx = -dx;
-            }
-            if (y + dy < ballRadius) {
-                dy = -dy;
-            }
-            else if (y + dy > canvas.height - ballRadius) {
-                if (x > paddleX && x < paddleX + paddleWidth) {
-                    dy = -dy;
-                }
-                else {
-                    alert("GAME OVER");
-                    document.location.reload();
-                    clearInterval(interval); // Needed for Chrome to end game
-                }
-            }
-
-            if (rightPressed && paddleX < canvas.width - paddleWidth) {
-                paddleX += 7;
-            }
-            else if (leftPressed && paddleX > 0) {
-                paddleX -= 7;
-            }
-
-            x += dx;
-            y += dy;
+            time++;
+            if (time > 1000000000) time = 0;
         }
-
-        var interval = setInterval(draw, 10);
+        document.addEventListener("keydown", keyDownHandler, false);
+        document.addEventListener("keyup", keyUpHandler, false);
+        setInterval(draw, 1);
     </script>
 
 </body>
